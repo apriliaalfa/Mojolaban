@@ -3,7 +3,7 @@ var DESA = ["Bekonang","Cangkol","Demakan","Dukuh","Gadingan","Joho","Klumprit",
 
 // Grid desa
 document.getElementById("gd").innerHTML = DESA.map(function(n){
-  var h=["Palur","Gadingan","Plumbon"].indexOf(n)>-1?"desa-"+n.toLowerCase()+".html":"#";
+    var h=["Palur","Gadingan","Plumbon","Wirun"].indexOf(n)>-1?"desa-"+n.toLowerCase()+".html":"#";
   return '<a class="d" href="'+h+'"><div class="ph">'+n[0]+'</div><p>'+n+'</p></a>';
 }).join("");
 

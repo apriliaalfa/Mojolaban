@@ -1366,3 +1366,25 @@ mark { background: #fbe39a; color: inherit; padding: 0 1px; border-radius: 2px; 
 .dir-summary > span + span:not(.dir-summary__src)::before { content: '·'; margin-right: var(--sp-4); color: var(--muted); }
 .dir-summary__src { font-size: var(--fs-xs); color: var(--muted); }
 @media (max-width: 640px) { .dir-summary { margin-left: 0; padding-bottom: 0; } }
+
+/* Navigasi: Daftar Desa (tautan + panah) bereaksi sebagai satu kesatuan saat hover */
+@media (min-width: 1120px) {
+  .nav__item--split { border-radius: 0; transition: background-color .2s ease; }
+  .nav__item--split > .nav__link, .nav__item--split > .nav__caret { transition: color .2s ease; }
+  .nav__item--split > .nav__caret .chev { transition: transform .2s ease; }
+  .nav__item--split:hover, .nav__item--split.is-open, .nav__item--split:focus-within { background: rgba(255,255,255,.07); }
+  .nav__item--split:hover > .nav__link, .nav__item--split:hover > .nav__caret,
+  .nav__item--split.is-open > .nav__link, .nav__item--split.is-open > .nav__caret { color: #fff; background: none; }
+  .nav__item--split > .nav__caret span, .nav__item--split > .nav__caret:hover span,
+  .nav__item--split:hover > .nav__caret span, .nav__item--split.is-open > .nav__caret span { background: none; }
+}
+
+/* Detail berita */
+.page-head__title--wide { max-width: 32ch; }
+.news-article__photo { margin-bottom: var(--sp-5); }
+.news-article__photo img { width: 100%; height: auto; background: var(--bg-alt); }   /* foto berupa poster kolase: tampil utuh, tidak dipotong */
+.news-article__photo figcaption { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--muted); }
+.news-article__photo[hidden] { display: none; }
+.news-article__body { font-size: 1.0625rem; }
+.village-nav span:empty + a { text-align: right; align-items: flex-end; border-left: 1px solid var(--line); }
+.aside-box .news-list li { padding-inline: 0; margin-inline: 0; }

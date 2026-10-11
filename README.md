@@ -27,6 +27,7 @@ Perlu koneksi internet untuk font (Google Fonts), peta (Google Maps), dan cuaca 
 Mojolaban/
 ├── index.html                  Beranda
 ├── berita.html                 Berita & pengumuman
+├── berita-detail.html          Template detail berita (?id=…, isi dari BERITA di data.js)
 ├── kontak.html                 Alamat & Kontak
 ├── profil/                     Folder menu "Profil Kecamatan Mojolaban"
 │   ├── profil.html             Profil Kecamatan Mojolaban

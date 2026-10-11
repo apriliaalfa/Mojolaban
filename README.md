@@ -34,10 +34,11 @@ Mojolaban/
 │   └── struktur.html           Struktur Organisasi
 ├── desa/                       Folder menu "Daftar Desa"
 │   ├── desa.html               Direktori 15 desa
+│   ├── desa-bekonang.html      Profil Desa Bekonang
 │   ├── desa-gadingan.html      Profil Desa Gadingan
 │   ├── desa-plumbon.html       Profil Desa Plumbon (kerangka awal)
 │   └── desa-wirun.html         Profil Desa Wirun
-│   (desa-bekonang.html & desa-palur.html ditautkan di menu untuk pengembangan berikutnya)
+│   (desa-palur.html ditautkan di menu untuk pengembangan berikutnya)
 ├── info/                       Folder menu "Info Publik"
 │   ├── pegawai.html            Daftar pegawai kecamatan
 │   ├── pegawai-eselon.html     … berdasarkan eselon
@@ -64,7 +65,7 @@ Mojolaban/
 └── README.md
 ```
 
-textHalaman HTML dikelompokkan ke dalam subfolder (`profil/`, `desa/`, dan `info/`) yang mencerminkan kategori menu navigasi utama:
+Halaman HTML dikelompokkan ke dalam subfolder (`profil/`, `desa/`, dan `info/`) yang mencerminkan kategori menu navigasi utama:
 
 - **Dari root (`./`):** memanggil aset dengan `assets/…` dan menautkan halaman subfolder dengan `<folder>/<nama-file>.html`.
 - **Dari dalam subfolder (`profil/`, `desa/`, `info/`):** memanggil aset dengan `../assets/…`, kembali ke beranda dengan `../index.html`, menautkan antarsaudara (dalam folder yang sama) langsung dengan `nama-file.html`, dan menautkan ke subfolder lain dengan `../<folder>/<nama-file>.html`.
@@ -143,8 +144,6 @@ Menghitung jadwal salat dengan kriteria Kemenag RI (Subuh −20°, Isya −18°,
    <script src="assets/js/mojo.js"></script>
    ```
 
-   html
-
 Pola isi yang sudah tersedia di `portal.css`: `.page-head` (kepala halaman berlatar gelap), `.subnav` (tab antarhalaman sejenis), `.split` (dua kolom), `.facts` (daftar keterangan), `.table-wrap` dan `.table` (tabel), `.docs` (daftar dokumen), `.notice` (catatan penting), `.source` (keterangan sumber).
 
 ---
@@ -164,7 +163,7 @@ Data dikumpulkan pada 10 Oktober 2026. Hal berikut ditandai di website dan perlu
 - **Pejabat saat ini.** Bagan struktur dan daftar pegawai berasal dari dokumen 2022. Berita PPID (13 Jan 2026) mencatat lepas sambut Camat dari Joko Windarto kepada Sriyadi, S.E. (disebut Plt. Camat); susunan lengkap 2026 belum dipublikasikan.
 - **Berita** dihimpun dari PPID Kecamatan Mojolaban (`informasi/berita`); tambahkan entri baru di `BERITA` pada `data.js`.
 - **Luas wilayah dan jarak ke ibu kota kabupaten** berbeda antara situs kecamatan (35,54 km²; 11 km) dan Dispendukcapil 2024 (38,29 km²; 17 km). Website menampilkan keduanya.
-- **Perangkat desa** berasal dari dokumen 2022. Untuk Desa Gadingan data perangkat dihimpun langsung dari struktur resmi di situs desa (`gadingan-sukoharjo.desa.id`), sedangkan lima desa lainnya belum memiliki dokumen di situs resmi kecamatan.
+- **Perangkat desa** berasal dari dokumen 2022. Untuk Desa Gadingan (`gadingan-sukoharjo.desa.id`) dan Desa Bekonang (`bekonang-sukoharjo.desa.id`), data perangkat dihimpun langsung dari struktur resmi situs masing-masing desa, sedangkan desa lainnya merujuk ke data BPS / dokumen di situs resmi kecamatan.
 - **Persyaratan tiap SOP** tidak disalin karena dokumennya berupa pindaian; pengunjung diarahkan ke dokumen resmi.
 - **Sejarah dan visi Desa Plumbon** belum terverifikasi, karena situs desanya tidak dapat diakses saat diperiksa.
 - **Berita resmi terakhir** di situs kecamatan bertanggal 17 Juli 2024.

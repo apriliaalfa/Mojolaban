@@ -1,19 +1,14 @@
 /**
- * mojo.js — Interaksi Website Kecamatan Mojolaban
- * Versi 5.0 · Oktober 2026
+ * mojo.js — Interaksi website Kecamatan Mojolaban, dipakai semua halaman.
+ * Butuh data.js (dan salat.js di Beranda). Tiap modul hanya berjalan bila
+ * elemen targetnya ada di halaman.
  *
- * Bergantung pada data.js (dan salat.js di Beranda). Setiap modul hanya
- * berjalan bila elemen targetnya ada, jadi file ini dipakai semua halaman.
- * Teks utama halaman ditulis di HTML; JS menyusun daftar/tabel dari data.js
- * agar data cukup diperbarui di satu tempat.
- *
- * Modul:
- *   1. Navigasi: dropdown, mega-panel, accordion mobile, keyboard
- *   2. Panel "Hari ini": tanggal WIB, cuaca BMKG, jadwal salat, status jam buka
- *   3. Berita & pengumuman
- *   4. Desa: peringkat penduduk, direktori (cari & filter), data per desa
- *   5. Info publik: pegawai, perangkat desa, kesejahteraan sosial, SOP
- *   5e–5i. Peramban SOP, sakelar Grafik/Tabel, tooltip, detail bagan, animasi muncul
+ *   1. Navigasi: dropdown, menu mobile, header, slider desa
+ *   2. Panel "Hari ini": tanggal, jam, jadwal salat, jam buka kantor, cuaca BMKG
+ *   3. Berita: daftar, filter, topik, halaman detail, pengumuman
+ *   4. Desa: peringkat penduduk, direktori, rumah ibadah per desa
+ *   5. Info publik: pegawai, perangkat desa, kesejahteraan sosial, SOP,
+ *      sakelar Grafik/Tabel, tooltip grafik, bagan struktur, animasi muncul
  *   6. Profil: catatan wilayah
  */
 (function () {
@@ -23,28 +18,32 @@
   function qs(sel, root)  { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
   function fmt(n) { return (n === null || n === undefined) ? '' : Number(n).toLocaleString('id-ID'); }
+  // Escape teks sebelum disisipkan ke innerHTML
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // Tautan ke situs luar: tab baru + penanda ↗ untuk pembaca layar
   function ext(url, label) {
     return '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label) +
       ' <span aria-hidden="true">↗</span><span class="sr-only">(situs luar)</span></a>';
   }
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var HARI  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  // "2026-10-06" → "6 Oktober 2026"
   function tanggalPanjang(iso) {
     var p = String(iso).split('-').map(Number);
     return p.length === 3 ? p[2] + ' ' + BULAN[p[1] - 1] + ' ' + p[0] : esc(iso);
   }
 
-  /* Waktu WIB (UTC+7) tanpa bergantung zona waktu perangkat pengunjung */
+  /* Waktu WIB (UTC+7), tidak bergantung zona waktu perangkat pengunjung */
   function nowWib() {
     var d = new Date(Date.now() + 7 * 3600 * 1000);
     return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), dow: d.getUTCDay(),
              menit: d.getUTCHours() * 60 + d.getUTCMinutes() };
   }
+  // Menit sejak tengah malam → "HH.MM"
   function jamMenit(menit) {
     var h = Math.floor(menit / 60), m = menit % 60;
     return (h < 10 ? '0' : '') + h + '.' + (m < 10 ? '0' : '') + m;
@@ -58,6 +57,7 @@
   var desktopMq  = window.matchMedia('(min-width: 1120px)');
 
   if (mainNav) {
+    /* 1a. Dropdown: dibuka dengan klik atau keyboard; di desktop juga dengan hover (CSS) */
     var triggers = qsa('[data-dd]', mainNav);
     var panelOf = function (btn) { return document.getElementById(btn.getAttribute('aria-controls')); };
     var itemOf  = function (btn) { return btn.closest('.nav__item'); };
@@ -81,6 +81,7 @@
       btn.addEventListener('click', function () {
         if (btn.getAttribute('aria-expanded') === 'true') closeItem(btn); else openItem(btn);
       });
+      // Panah bawah pada tombol: buka dropdown dan fokus ke tautan pertama
       btn.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -89,6 +90,7 @@
           if (first) first.focus();
         }
       });
+      // Di dalam dropdown: panah atas/bawah berputar, Home/End ke ujung
       panelOf(btn).addEventListener('keydown', function (e) {
         if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(e.key) === -1) return;
         var links = linksIn(panelOf(btn));
@@ -99,7 +101,7 @@
                  : (i + (e.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
         links[next].focus();
       });
-      /* Desktop: dropdown dibuka lewat hover (CSS); yang dibuka dengan klik ditutup saat kursor pergi */
+      // Desktop: dropdown yang dibuka dengan klik ikut tertutup saat kursor atau fokus keluar
       itemOf(btn).addEventListener('mouseenter', function () { if (desktopMq.matches) closeAll(btn); });
       itemOf(btn).addEventListener('mouseleave', function () { if (desktopMq.matches && !itemOf(btn).contains(document.activeElement)) closeItem(btn); });
       itemOf(btn).addEventListener('focusout', function (e) {
@@ -107,18 +109,20 @@
       });
     });
 
+    // Klik di luar navigasi menutup dropdown (desktop)
     document.addEventListener('click', function (e) {
       if (desktopMq.matches && !e.target.closest('#main-nav')) closeAll();
     });
 
-    /* Menu responsif: panel dari kanan + latar gelap + tombol tutup di dalam panel */
+    /* 1b. Menu mobile: panel geser dari kanan, latar gelap, dan tombol Tutup di dalam panel */
     var backdrop = document.createElement('div');
     backdrop.className = 'nav-backdrop';
-    (mainNav.closest('.header') || document.body).appendChild(backdrop);   // satu konteks tumpukan dengan panel
+    (mainNav.closest('.header') || document.body).appendChild(backdrop);   // di dalam header agar tidak menutupi panel
     mainNav.insertAdjacentHTML('afterbegin', '<div class="nav-drawer__head"><span class="nav-drawer__title">Menu</span>' +
       '<button type="button" class="nav-drawer__close"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>Tutup</button></div>');
     var drawerClose = qs('.nav-drawer__close', mainNav);
 
+    // Buka/tutup panel; halaman di belakang dikunci dan fokus dipindah ke dalam/luar panel
     var setMobileOpen = function (open) {
       if (!mainToggle) return;
       var wasOpen = mainNav.classList.contains('is-open');
@@ -137,6 +141,7 @@
         setMobileOpen(mainToggle.getAttribute('aria-expanded') !== 'true');
       });
     }
+    // Escape: tutup dropdown dulu, lalu panel menu mobile
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       var open = openTrigger();
@@ -153,9 +158,9 @@
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
-  /* 1d. Slider desa: berjalan otomatis, berhenti saat hover/fokus. Isi digandakan
-         (salinan aria-hidden, tidak bisa difokus) agar putarannya tanpa jeda.
-         Reduced motion: tidak beranimasi, tetap bisa digeser manual. */
+  /* 1d. Slider desa berjalan otomatis (berhenti saat hover/fokus). Isi digandakan agar
+         putarannya tanpa jeda; salinannya disembunyikan dari pembaca layar dan Tab.
+         Reduced motion: tidak beranimasi. */
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   qsa('[data-slider]').forEach(function (sl) {
     var track = qs('.vslider__track', sl);
@@ -168,11 +173,11 @@
       track.appendChild(c);
     });
     track.removeAttribute('tabindex');
-    sl.style.setProperty('--vs-dur', (asli.length * 6) + 's');
+    sl.style.setProperty('--vs-dur', (asli.length * 6) + 's');   // 6 detik per kartu
     sl.classList.add('is-auto');
   });
 
-  if (typeof KECAMATAN === 'undefined') return;  // data.js tidak dimuat
+  if (typeof KECAMATAN === 'undefined') return;  // modul di bawah butuh data.js
 
   /* ────────────────────────────────────────────────────────
      2. PANEL "HARI INI"
@@ -183,7 +188,7 @@
     todayDate.textContent = HARI[w.dow] + ', ' + w.d + ' ' + BULAN[w.m - 1] + ' ' + w.y;
   }
 
-  /* Jam saat ini (WIB, jam.menit) di panel jadwal salat; dicek tiap detik agar pergantian menit tepat */
+  /* 2a. Jam saat ini (HH.MM WIB); diperbarui tiap detik agar pergantian menit tepat waktu */
   var clocks = qsa('[data-clock]');
   if (clocks.length) {
     var tick = function () {
@@ -195,7 +200,7 @@
     tick(); setInterval(tick, 1000);
   }
 
-  /* 2a. Jadwal salat (salat.js, kriteria Kemenag; tervalidasi ±1 menit) */
+  /* 2b. Jadwal salat hari ini dari salat.js; waktu berikutnya ditandai */
   var prayBox = qs('[data-pray]');
   function renderPray() {
     if (!prayBox || typeof Salat === 'undefined') return;
@@ -223,11 +228,12 @@
   }
   renderPray();
 
-  /* 2b. Status jam buka kantor (Senin–Kamis 07.00–15.30, Jumat 07.00–14.00) */
+  /* 2c. Status jam buka kantor. Hari libur nasional belum diperhitungkan. */
   var openBox = qs('[data-open-status]');
   function renderOpen() {
     if (!openBox) return;
     var w = nowWib();
+    // hari (1 = Senin) → [buka, tutup] dalam menit: 07.00–15.30, Jumat 07.00–14.00
     var jam = { 1: [420, 930], 2: [420, 930], 3: [420, 930], 4: [420, 930], 5: [420, 840] };
     var h = jam[w.dow];
     var buka = h && w.menit >= h[0] && w.menit < h[1];
@@ -245,7 +251,8 @@
   renderOpen();
   if (prayBox || openBox) setInterval(function () { renderPray(); renderOpen(); }, 60000);
 
-  /* 2c. Cuaca BMKG (prakiraan tingkat desa, Bekonang). Tidak ada angka cadangan. */
+  /* 2d. Cuaca BMKG Desa Bekonang. Disimpan 30 menit di sessionStorage; bila gagal dimuat
+         ditampilkan pesan + tautan BMKG (tanpa angka cadangan). */
   var wxBox = qs('[data-weather]');
   if (wxBox && typeof LOKASI !== 'undefined') {
     var CACHE = 'mojolaban-bmkg-v1';
@@ -300,7 +307,13 @@
   ──────────────────────────────────────────────────────── */
   var sumberNama = function (key) { return SUMBER[key] ? SUMBER[key].judul : ''; };
   var berita = (typeof BERITA !== 'undefined' ? BERITA.slice() : []).sort(function (a, b) { return a.tanggal < b.tanggal ? 1 : -1; });
+  /* Tautan detail berita. ROOT = awalan path ke folder utama, dibaca dari tag <script> mojo.js,
+     agar tautan benar dari halaman di subfolder. */
+  var mojoTag = qs('script[src$="assets/js/mojo.js"]');
+  var ROOT = mojoTag ? mojoTag.getAttribute('src').replace(/assets\/js\/mojo\.js$/, '') : '';
+  var detailUrl = function (b) { return ROOT + 'berita-detail.html?id=' + encodeURIComponent(b.id); };
 
+  /* 3a. Berita utama (terbaru) + daftar berita berikutnya; data-news-list="2" = batas jumlah */
   var leadBox = qs('[data-news-lead]');
   var newsLists = qsa('[data-news-list]');
   var renderNews = function (items) {
@@ -310,8 +323,7 @@
       leadBox.innerHTML =
         '<article class="news-lead">' +
           '<p class="news-lead__date">' + p0[2] + '<small>' + BULAN[p0[1] - 1] + ' ' + p0[0] + '</small></p>' +
-          '<h3 class="news-lead__title"><a href="' + esc(b0.url) + '" target="_blank" rel="noopener">' + esc(b0.judul) +
-            '<span class="sr-only"> (membuka situs resmi kecamatan)</span></a></h3>' +
+          '<h3 class="news-lead__title"><a href="' + esc(detailUrl(b0)) + '">' + esc(b0.judul) + '</a></h3>' +
           '<p class="news-lead__excerpt">' + esc(b0.cuplikan) + '</p>' +
           '<p class="news-meta news-lead__src"><span class="tag">' + esc(b0.kategori) + '</span><span>' + esc(sumberNama(b0.sumber)) + '</span></p>' +
         '</article>';
@@ -320,15 +332,14 @@
       var limit = +list.getAttribute('data-news-list') || 99;
       list.innerHTML = items.slice(1, 1 + limit).map(function (b) {
         return '<li><p class="news-meta"><time datetime="' + esc(b.tanggal) + '">' + tanggalPanjang(b.tanggal) + '</time><span class="tag">' + esc(b.kategori) + '</span></p>' +
-          '<h3 class="news-row__title"><a href="' + esc(b.url) + '" target="_blank" rel="noopener">' + esc(b.judul) +
-          '<span class="sr-only"> (membuka situs resmi kecamatan)</span></a></h3>' +
+          '<h3 class="news-row__title"><a href="' + esc(detailUrl(b)) + '">' + esc(b.judul) + '</a></h3>' +
           '<p class="news-row__excerpt">' + esc(b.cuplikan) + '</p></li>';
       }).join('');
     });
   };
   if (berita.length) renderNews(berita);
 
-  /* Filter kategori berita (hanya kategori yang ada di data) */
+  /* 3b. Filter kategori (dibuat dari kategori yang ada di data) */
   var newsChips = qs('[data-news-chips]');
   if (newsChips && berita.length) {
     var kat = [];
@@ -347,7 +358,7 @@
       });
     });
   }
-  /* Topik berita (kolom samping): jumlah & tanggal terbaru per kategori; klik = filter */
+  /* 3c. Topik berita di kolom samping: jumlah dan tanggal terbaru per kategori; klik = filter */
   var topicBox = qs('[data-news-topics]');
   if (topicBox && newsChips && berita.length) {
     var topik = [];
@@ -378,6 +389,56 @@
     newsChips.addEventListener('click', function () { setTimeout(syncTopik, 0); });
   }
 
+  /* 3d. Halaman detail: berita-detail.html?id=... mengisi satu template dari BERITA */
+  var detailBox = qs('[data-news-detail]');
+  if (detailBox) {
+    var idQ = new URLSearchParams(location.search).get('id');
+    var pos = -1;
+    berita.forEach(function (b, i) { if (b.id === idQ) pos = i; });
+    var setText = function (sel, html) { var el = qs(sel); if (el) el.innerHTML = html; };
+    if (pos < 0) {
+      document.title = 'Berita tidak ditemukan · Kecamatan Mojolaban';
+      setText('[data-news-crumb]', 'Tidak ditemukan');
+      setText('[data-news-title]', 'Berita tidak ditemukan');
+      setText('[data-news-meta]', 'Tautan berita ini tidak dikenali atau beritanya sudah tidak ada.');
+      detailBox.innerHTML = '<p class="prose">Silakan pilih berita dari <a href="' + ROOT + 'berita.html">daftar berita</a>.</p>';
+    } else {
+      var B = berita[pos];
+      var norm = function (t) { return String(t).toLowerCase().replace(/[^a-z0-9]/g, ''); };
+      // Paragraf pertama yang hanya mengulang judul tidak ditampilkan
+      var isi = (B.isi || []).filter(function (p, i) {
+        return !(i === 0 && (p === p.toUpperCase() || norm(p) === norm(B.judul)));
+      });
+      if (!isi.length) isi = [B.cuplikan];
+      document.title = B.judul + ' · Kecamatan Mojolaban';
+      setText('[data-news-crumb]', esc(B.judul));
+      setText('[data-news-title]', esc(B.judul));
+      setText('[data-news-meta]', '<time datetime="' + esc(B.tanggal) + '">' + tanggalPanjang(B.tanggal) + '</time> · ' + esc(B.kategori));
+      var sumber = SUMBER[B.sumber];
+      detailBox.innerHTML =
+        '<article class="news-article">' +
+          (B.foto ? '<figure class="news-article__photo"><img src="' + esc(B.foto) + '" alt="Dokumentasi kegiatan: ' + esc(B.judul) + '" ' +
+            'referrerpolicy="no-referrer" onerror="this.closest(\'figure\').hidden=true"><figcaption>Foto: ' + esc(sumberNama(B.sumber) || 'situs resmi kecamatan') + '</figcaption></figure>' : '') +
+          '<div class="prose news-article__body">' + isi.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div>' +
+          '<p class="source mt-5">Sumber: ' + ext(B.url, 'berita asli di ' + (sumber ? sumber.judul : 'situs resmi kecamatan')) +
+            ', diterbitkan ' + tanggalPanjang(B.tanggal) + '. Teks dan foto disalin dari sumber tersebut.</p>' +
+        '</article>' +
+        '<nav class="village-nav block" aria-label="Berita sebelum dan sesudahnya">' +
+          (berita[pos - 1] ? '<a href="' + esc(detailUrl(berita[pos - 1])) + '"><span>← Lebih baru</span><b>' + esc(berita[pos - 1].judul) + '</b></a>' : '<span></span>') +
+          (berita[pos + 1] ? '<a href="' + esc(detailUrl(berita[pos + 1])) + '"><span>Lebih lama →</span><b>' + esc(berita[pos + 1].judul) + '</b></a>' : '') +
+        '</nav>';
+      // Berita lainnya: kategori yang sama dulu, lalu yang terbaru
+      var lain = berita.filter(function (b) { return b.id !== B.id; })
+        .sort(function (a, b) { return (b.kategori === B.kategori) - (a.kategori === B.kategori) || (a.tanggal < b.tanggal ? 1 : -1); })
+        .slice(0, 4);
+      setText('[data-news-more]', lain.map(function (b) {
+        return '<li><p class="news-meta"><time datetime="' + esc(b.tanggal) + '">' + tanggalPanjang(b.tanggal) + '</time><span class="tag">' + esc(b.kategori) + '</span></p>' +
+          '<h3 class="news-row__title"><a href="' + esc(detailUrl(b)) + '">' + esc(b.judul) + '</a></h3></li>';
+      }).join(''));
+    }
+  }
+
+  /* 3e. Pengumuman (tautan ke situs resmi kecamatan) */
   var annBox = qs('[data-announce]');
   if (annBox && typeof PENGUMUMAN !== 'undefined' && PENGUMUMAN.length) {
     annBox.innerHTML = PENGUMUMAN.map(function (p) {
@@ -392,8 +453,8 @@
   ──────────────────────────────────────────────────────── */
   var urutPenduduk = DESA.slice().sort(function (a, b) { return b.populasi - a.populasi; });
 
-  /* 4a. Peringkat penduduk. data-highlight="palur" → hanya desa itu disorot.
-         Tanpa data-highlight (direktori desa): semua batang sama, nama tanpa tautan. */
+  /* 4a. Peringkat penduduk. data-highlight="palur": desa itu disorot dan desa lain bertautan.
+         Tanpa data-highlight (direktori desa): satu warna, tanpa tautan. */
   qsa('.rank').forEach(function (list) {
     var only = list.getAttribute('data-highlight');
     var max = urutPenduduk[0].populasi;
@@ -407,7 +468,7 @@
     }).join('');
   });
 
-  /* 4b. Direktori desa: pencarian nama */
+  /* 4b. Direktori desa: daftar dari DESA + pencarian nama dengan sorotan */
   var dir = qs('#dir-index');
   if (dir) {
     dir.innerHTML = '<li class="dir-index__row dir-index__head" aria-hidden="true"><span>Kode</span><span>Desa</span><span style="text-align:right">Penduduk 2024</span><span>Profil</span></li>' +
@@ -449,7 +510,7 @@
     apply();
   }
 
-  /* 4c. Data resmi per desa (rumah ibadah & tokoh agama) di halaman desa */
+  /* 4c. Rumah ibadah & tokoh agama untuk satu desa: data-desa-kesos="Wirun" */
   qsa('[data-desa-kesos]').forEach(function (box) {
     var nama = box.getAttribute('data-desa-kesos');
     var g = KESOS.gereja, m = KESOS.masjid, t = KESOS.tokoh;
@@ -464,6 +525,7 @@
   /* ────────────────────────────────────────────────────────
      5. INFO PUBLIK
   ──────────────────────────────────────────────────────── */
+  // Tabel yang bisa digulir mendatar; numCols = indeks kolom angka (rata kanan)
   var tabel = function (caption, head, rows, numCols, foot) {
     numCols = numCols || [];
     return '<div class="table-wrap" role="region" tabindex="0" aria-label="' + esc(caption) + '"><table class="table' + (head.length >= 4 ? ' table--wide' : '') + '">' +
@@ -471,19 +533,21 @@
         return '<th scope="col"' + (numCols.indexOf(i) > -1 ? ' class="num"' : '') + '>' + esc(h) + '</th>';
       }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody>' + (foot || '') + '</table></div>';
   };
+  // Pita angka ringkas; items = [[angka, label, satuan?], ...]
   var figures = function (items) {
     return '<div class="figures">' + items.map(function (it) {
       return '<div><b>' + it[0] + (it[2] ? '<small>' + it[2] + '</small>' : '') + '</b><span>' + esc(it[1]) + '</span></div>';
     }).join('') + '</div>';
   };
 
-  /* 5a. Pegawai — satu fungsi untuk lima tampilan */
+  /* 5a. Pegawai: data-pegawai = semua | eselon | golongan | jk | pendidikan */
   qsa('[data-pegawai]').forEach(function (box) {
     var view = box.getAttribute('data-pegawai');
     var P = PEGAWAI.daftar;
     var row = function (p, i) {
       return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(p.jabatan) + '</td><th scope="row">' + esc(p.nama) + '</th><td>' + esc(p.pangkat) + ', ' + esc(p.gol) + '</td></tr>';
     };
+    // Baris tabel dikelompokkan menurut key(p), urut sesuai order; nomor urut tetap bersambung
     var groups = function (key, order, label) {
       var html = '', n = 0;
       order.forEach(function (g) {
@@ -496,7 +560,7 @@
     };
     var count = function (key, g) { return P.filter(function (p) { return key(p) === g; }).length; };
     var head = ['No', 'Jabatan', 'Nama', 'Pangkat, golongan'];
-    /* Submenu kepegawaian: tabel saja (tanpa grafik & pilihan tampilan) */
+    // Tabel dengan jarak atas (halaman pegawai hanya menampilkan tabel)
     var dual = function (tableHtml) { return '<div class="mt-5">' + tableHtml + '</div>'; };
     var html = '';
     if (view === 'semua') {
@@ -533,7 +597,7 @@
     box.innerHTML = html;
   });
 
-  /* 5b. Perangkat desa */
+  /* 5b. Perangkat desa: tabel per desa (data-perangkat="palur") dan daftar dokumen PDF */
   qsa('[data-perangkat]').forEach(function (box) {
     var key = box.getAttribute('data-perangkat');
     var r = PERANGKAT_DESA.rinci[key];
@@ -553,7 +617,8 @@
     }).join('');
   }
 
-  /* 5c. Kesejahteraan sosial: gereja, masjid, tokoh agama */
+  /* 5c. Kesejahteraan sosial (data-kesos = gereja | masjid | tokoh): grafik batang
+         dengan pilihan urutan + tabel. Desa yang punya halaman profil ditebalkan. */
   qsa('[data-kesos]').forEach(function (box) {
     var key = box.getAttribute('data-kesos');
     var o = KESOS[key];
@@ -595,13 +660,13 @@
       .filter(function (n) { return KESOS.tokoh.perDesa[n] === undefined; }).join(', ');
   }
 
-  /* 5d. SOP pelayanan */
+  /* 5d. Daftar SOP pelayanan sederhana */
   var sopBox = qs('[data-sop]');
   if (sopBox && typeof SOP_PELAYANAN !== 'undefined') {
     sopBox.innerHTML = SOP_PELAYANAN.daftar.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
   }
 
-  /* 5e. Peramban SOP: pencarian, pengelompokan (klasifikasi situs ini), detail */
+  /* 5e. Peramban SOP: kelompok layanan, pencarian dengan sorotan, chip kata kunci */
   var sopBrowser = qs('[data-sop-browser]');
   if (sopBrowser && typeof SOP_PELAYANAN !== 'undefined' && SOP_PELAYANAN.kelompok) {
     var SP = SOP_PELAYANAN;
@@ -648,7 +713,8 @@
     cariSop();
   }
 
-  /* 5f. Sakelar Grafik/Tabel */
+  /* 5f. Sakelar Grafik/Tabel: tombol [data-view="id-panel"] menampilkan panelnya
+         dan menyembunyikan panel tombol lain di grup yang sama */
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-view]');
     if (!b) return;
@@ -660,7 +726,8 @@
     });
   });
 
-  /* 5g. Tooltip grafik: hover, fokus keyboard, dan ketuk; Escape menutup */
+  /* 5g. Tooltip grafik (.chart__row[data-tip]): muncul saat hover, fokus, atau ketuk;
+         Escape menutup */
   var tip = null, tipFor = null;
   var showTip = function (row) {
     if (!tip) { tip = document.createElement('div'); tip.className = 'tip'; tip.setAttribute('role', 'tooltip'); tip.hidden = true; }
@@ -688,7 +755,8 @@
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tipFor) hideTip(); });
 
-  /* 5h. Bagan struktur: detail pangkat/golongan dari data pegawai 2022 */
+  /* 5h. Bagan struktur: tombol "Pangkat & golongan" per pejabat, dicocokkan lewat nama
+         dengan data pegawai 2022 */
   qsa('.org__node').forEach(function (node, i) {
     var nameEl = qs('.org__name', node); if (!nameEl || typeof PEGAWAI === 'undefined') return;
     var nama = nameEl.textContent.split(',')[0].trim().toLowerCase();
@@ -704,13 +772,13 @@
     });
   });
 
-  /* 5i. Animasi muncul saat menggulir. Konten hanya disembunyikan setelah JS
-         memastikan IntersectionObserver ada dan reduced motion tidak aktif. */
+  /* 5i. Animasi muncul saat menggulir. Hanya untuk elemen di bawah layar awal, dan hanya
+         bila IntersectionObserver tersedia serta reduced motion tidak aktif. */
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduce && 'IntersectionObserver' in window) {
     var targets = qsa('main .section > .container > *, main .section > .container.split > *');
     var vh = window.innerHeight;
-    targets = targets.filter(function (el) { return el.getBoundingClientRect().top > vh; });  // yang sudah terlihat tidak dianimasikan
+    targets = targets.filter(function (el) { return el.getBoundingClientRect().top > vh; });
     if (targets.length) {
       targets.forEach(function (el) { el.classList.add('reveal'); });
       document.documentElement.classList.add('reveal-ready');
@@ -718,13 +786,13 @@
         entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } });
       }, { rootMargin: '0px 0px -8% 0px' });
       targets.forEach(function (el) { io.observe(el); });
-      // pengaman: apa pun yang terjadi, tampilkan semua setelah 4 detik
+      // Pengaman: semua elemen tampil paling lambat setelah 4 detik
       setTimeout(function () { targets.forEach(function (el) { el.classList.add('is-in'); }); }, 4000);
     }
   }
 
   /* ────────────────────────────────────────────────────────
-     6. PROFIL — catatan wilayah bersumber
+     6. PROFIL — catatan wilayah dari POTENSI, beserta sumbernya
   ──────────────────────────────────────────────────────── */
   var potensiBox = qs('[data-potensi]');
   if (potensiBox && typeof POTENSI !== 'undefined') {

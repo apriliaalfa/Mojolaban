@@ -1,12 +1,6 @@
 /**
  * salat.js — Jadwal salat dengan kriteria Kemenag RI.
- *
- * Kriteria: Subuh −20°, Isya −18°, Asar bayangan 1× (Syafi'i), terbit/terbenam −1°,
- * ditambah ihtiyat (menit kehati-hatian), Imsak = Subuh − 10 menit.
- * Hasil diuji terhadap jadwal Kemenag Kab. Sukoharjo 2026 (lihat KONFIG.validasi).
  * Jadwal resmi: https://bimasislam.kemenag.go.id/jadwalshalat
- *
- * Tanpa dependensi dan tanpa jaringan: window.Salat di browser, module.exports di Node.
  */
 (function (root) {
   'use strict';
@@ -14,10 +8,10 @@
   var KONFIG = {
     // Titik acuan Kab. Sukoharjo yang paling cocok dengan tabel Kemenag (jadwal Kemenag berlaku per kabupaten).
     lintang: -7.68,
-    bujur:   110.85,
-    zona:    7,             // WIB
+    bujur: 110.85,
+    zona: 7,             // WIB
     sudutSubuh: 20,         // derajat di bawah ufuk
-    sudutIsya:  18,
+    sudutIsya: 18,
     tinggiTerbit: -1,       // tinggi matahari saat terbit & Magrib (derajat)
     ihtiyat: { subuh: 2, terbit: 2, dzuhur: 3, ashar: 2, maghrib: 2, isya: 2 },
     imsak: 10,              // menit sebelum Subuh
@@ -77,12 +71,12 @@
       return Math.atan(1 / (1 + Math.tan(Math.abs(k.lintang - dekl) * RAD))) / RAD;
     };
     var jam = {
-      subuh:   waktu(5, function () { return -k.sudutSubuh; }, -1),
-      terbit:  waktu(6, function () { return k.tinggiTerbit; }, -1),
-      dzuhur:  waktu(12, null, 0),
-      ashar:   waktu(15, asarTinggi, 1),
+      subuh: waktu(5, function () { return -k.sudutSubuh; }, -1),
+      terbit: waktu(6, function () { return k.tinggiTerbit; }, -1),
+      dzuhur: waktu(12, null, 0),
+      ashar: waktu(15, asarTinggi, 1),
       maghrib: waktu(18, function () { return k.tinggiTerbit; }, 1),
-      isya:    waktu(19, function () { return -k.sudutIsya; }, 1)
+      isya: waktu(19, function () { return -k.sudutIsya; }, 1)
     };
     var out = {};
     // Ihtiyat: terbit dimajukan dan dibulatkan ke bawah, waktu lain dimundurkan dan dibulatkan ke atas

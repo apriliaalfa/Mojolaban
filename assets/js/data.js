@@ -1,26 +1,17 @@
 /**
- * data.js — Data Statis Website Kecamatan Mojolaban
- * Versi 4.0 · Oktober 2026
+ * data.js — Satu-satunya sumber data website Kecamatan Mojolaban.
+ * mojo.js menyusun daftar, tabel, dan grafik dari data di file ini.
  *
- * ATURAN DATA:
- *   null  → data belum tersedia; tampilkan sebagai "Belum tersedia", jangan dikarang.
- *   Setiap angka wajib punya sumber (lihat SUMBER di bawah).
- *
- * Diverifikasi 10 Oktober 2026 terhadap:
- *   [kependudukan] Profil Perkembangan Kependudukan Kabupaten Sukoharjo 2024,
- *                  Dinas Kependudukan dan Pencatatan Sipil Kab. Sukoharjo
- *                  (Tabel 2.1, 2.2, 3.3, 3.4; tabel penduduk per desa Kec. Mojolaban)
- *   [papan]        Papan nama Kantor Kecamatan Mojolaban (assets/img/kecm.jpeg, ±2023)
- *   [kecamatan]    Situs resmi Kecamatan Mojolaban, mojolaban.sukoharjokab.go.id
- *                  (halaman Profil, Tupoksi, Struktur, Kontak, Berita; diakses 10 Okt 2026)
- *
- * CATATAN KONFLIK DATA: situs kecamatan dan Dispendukcapil mencatat luas dan jarak
- * ke ibu kota kabupaten yang berbeda. Keduanya ditampilkan beserta sumbernya;
- * jangan memilih salah satu sebagai angka pasti.
+ * Aturan:
+ *   - null = data belum tersedia. Jangan diisi perkiraan.
+ *   - Setiap angka punya sumber (kunci di SUMBER). Diperiksa 10 Oktober 2026.
+ *   - Luas dan jarak ke ibu kota kabupaten berbeda antara Dispendukcapil dan situs
+ *     kecamatan. Halaman memakai Dispendukcapil 2024 (KECAMATAN.stats); angka situs
+ *     kecamatan disimpan di KECAMATAN.wilayahResmiKecamatan.
  */
 
 /* ============================================================
-   SUMBER
+   SUMBER — dirujuk lewat kunci, misalnya sumber: "ppid"
    ============================================================ */
 const SUMBER = {
   kependudukan: {
@@ -120,9 +111,9 @@ const KECAMATAN = {
 };
 
 /* ============================================================
-   DAFTAR 15 DESA
-   Penduduk 2024: SUMBER.kependudukan (urutan kode = urutan tabel resmi)
-   fokus:    lima desa kelompok (Bekonang, Palur, Plumbon, Gadingan, Wirun) yang punya halaman profil
+   DAFTAR 15 DESA — urut kode wilayah; penduduk 2024 (SUMBER.kependudukan)
+   halaman: file profil di folder desa/ (null = belum ada)
+   fokus:   lima desa kelompok yang punya halaman profil
    ============================================================ */
 const DESA = [
   { id: "laban",     nama: "Laban",     kode: "2001", laki: 2738, perempuan: 2705, populasi: 5443,  halaman: null },
@@ -174,9 +165,8 @@ const POTENSI = [
 ];
 
 /* ============================================================
-   SOP PELAYANAN UMUM — daftar resmi dari situs kecamatan
-   (halaman Info Publik › Pelayanan Umum). Dokumen PDF berupa
-   Keputusan Camat hasil pindaian, diunggah 2022 (lihat path berkas).
+   SOP PELAYANAN UMUM — daftar resmi situs kecamatan (Info Publik ›
+   Pelayanan Umum); dokumen PDF hasil pindaian, diunggah 2022
    ============================================================ */
 const SOP_PELAYANAN = {
   sumber:  "kecamatan",
@@ -197,7 +187,7 @@ const SOP_PELAYANAN = {
     "Keterangan domisili",
     "Dispensasi nikah",
   ],
-  /* KLASIFIKASI SITUS INI (bukan kategori resmi pemerintah): indeks ke `daftar` */
+  /* Pengelompokan buatan situs ini (bukan kategori resmi); angka = indeks di `daftar` */
   kelompok: [
     { nama: "Kependudukan",     isi: [1, 2, 3, 4, 6, 9] },
     { nama: "Surat keterangan", isi: [7, 8, 10] },
@@ -206,15 +196,15 @@ const SOP_PELAYANAN = {
 };
 
 /* ============================================================
-   BERITA — kosong sampai ada berita terverifikasi.
-   Format: { id, judul, tanggal: "2026-10-01", kategori, cuplikan,
-             foto: "assets/img/...jpg" | null, fotoAlt, url }
-   Entri pertama otomatis menjadi berita utama.
+   BERITA — dari situs PPID Kecamatan Mojolaban (diperiksa 10 Okt 2026);
+   ucapan hari besar tanpa kegiatan tidak dimuat.
+   Format: { id, judul, tanggal "YYYY-MM-DD", kategori, sumber, cuplikan, url, foto, isi[] }
+     id        dipakai di berita-detail.html?id=...
+     cuplikan  ringkasan untuk daftar berita
+     foto, isi foto dan paragraf asli untuk halaman detail
+   Urutan bebas: ditampilkan dari yang terbaru; yang terbaru jadi berita utama.
    ============================================================ */
 const BERITA = [
-  /* Berita & kegiatan dari situs PPID Kecamatan Mojolaban (diperiksa 10 Okt 2026).
-     Ucapan hari besar tanpa kegiatan tidak dimuat. Cuplikan diringkas dari teks asli.
-     foto & isi: foto dan teks berita asli PPID (dimuat di berita-detail.html?id=...). */
   { id: "penyaluran-cadangan-pangan-pemerintah-daerah-cpp", judul: "Penyaluran Cadangan Pangan Pemerintah Daerah (CPPD) Kabupaten Sukoharjo Tahun 2026",
     tanggal: "2026-10-06", kategori: "Bantuan sosial", sumber: "ppid",
     cuplikan: "CPPD untuk penanganan kerawanan pangan didistribusikan di wilayah Kecamatan Mojolaban bagi keluarga penerima manfaat.",
@@ -333,7 +323,7 @@ const BERITA = [
     ] },
 ];
 
-/* Pengumuman terakhir di situs resmi kecamatan (diperiksa 10 Okt 2026). */
+/* Pengumuman dari situs resmi kecamatan (diperiksa 10 Okt 2026) */
 const PENGUMUMAN = [
   { judul: "Situasi Wabah Penyakit Mulut dan Kuku (PMK) di Kabupaten Sukoharjo", tanggal: "2022-06-07", sumber: "kecamatan",
     url: "https://mojolaban.sukoharjokab.go.id/pengumuman/situasi-wabah-penyakit-mulut-dan-kuku-pmk-di-kabupaten-sukoharjo" },
@@ -343,9 +333,9 @@ const PENGUMUMAN = [
    LOKASI & KANAL RESMI
    ============================================================ */
 const LOKASI = {
-  /* Kantor kecamatan: kode lokasi Google Maps 6P4G9VVC+G78 (±−7,6062; 110,8707) */
+  /* Kantor kecamatan (Google Maps 6P4G9VVC+G78) */
   kantor: { lintang: -7.6062, bujur: 110.8707 },
-  /* Prakiraan cuaca BMKG tingkat desa: Desa Bekonang, tempat kantor kecamatan berada */
+  /* Prakiraan cuaca BMKG untuk Desa Bekonang, lokasi kantor kecamatan */
   bmkg: { adm4: "33.11.08.2004", desa: "Bekonang",
           url: "https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=33.11.08.2004",
           sumber: "https://data.bmkg.go.id/prakiraan-cuaca/" },
@@ -353,7 +343,7 @@ const LOKASI = {
   petunjukArah: "https://www.google.com/maps/dir/?api=1&destination=Kantor+Kecamatan+Mojolaban+Sukoharjo",
 };
 
-/* Rujukan URL kanal resmi; teks halaman saat ini ditulis langsung di HTML. */
+/* Kanal resmi (rujukan; teks di halaman ditulis langsung di HTML) */
 const KANAL = {
   ppid:  { nama: "PPID Kecamatan Mojolaban", url: "https://ppid.mojolaban.sukoharjokab.go.id/",
            fungsi: "Permohonan informasi publik dan pengajuan keberatan informasi" },
@@ -363,10 +353,9 @@ const KANAL = {
 };
 
 /* ============================================================
-   PEGAWAI KECAMATAN — "Daftar Pegawai Kecamatan Mojolaban Tahun 2022"
-   (5 berkas PDF resmi). NIP sengaja TIDAK disalin (memuat tanggal lahir).
-   jk & pend sesuai kolom dokumen (total dokumen: L 12, P 5; S-2 3, S-1 6,
-   D-III 4, SLTA/D-1 4).
+   PEGAWAI KECAMATAN — dokumen resmi tahun 2022 (5 berkas PDF).
+   NIP tidak disalin karena memuat tanggal lahir.
+   eselon null = pegawai pelaksana. jk: L/P. pend: pendidikan terakhir.
    ============================================================ */
 const PEGAWAI = {
   tahun: 2022,
@@ -400,11 +389,9 @@ const PEGAWAI = {
 };
 
 /* ============================================================
-   STRUKTUR ORGANISASI — bagan resmi (tanpa tanggal; nama sesuai dokumen
-   pegawai 2022). Halaman "Profil Plt. Camat" (tanpa tanggal) menyebut
-   Wisnu Pramudiya Wardhana sebagai Plt. Camat → pejabat saat ini perlu konfirmasi.
+   STRUKTUR ORGANISASI — rujukan bagan resmi. Bagan di profil/struktur.html
+   ditulis langsung di HTML dengan nama pejabat menurut data pegawai 2022.
    ============================================================ */
-/* Rujukan sumber bagan; bagan di struktur.html ditulis langsung di HTML. */
 const STRUKTUR = {
   gambar: "https://mojolaban.sukoharjokab.go.id/storage/4F8bH8J9WUpXxlriwR9RmqvRuQi5ZO1InoT88wJa.jpeg",
   halaman: "https://mojolaban.sukoharjokab.go.id/profil/struktur",
@@ -412,8 +399,8 @@ const STRUKTUR = {
 };
 
 /* ============================================================
-   PERANGKAT DESA — dokumen resmi per desa (2022). Hanya nama & jabatan
-   yang ditampilkan; tempat/tanggal lahir, agama, dan nomor SK tidak disalin.
+   PERANGKAT DESA — dokumen resmi per desa (2022). Hanya nama dan
+   jabatan yang disalin; data pribadi lain tidak.
    ============================================================ */
 const PERANGKAT_DESA = {
   halaman: "https://mojolaban.sukoharjokab.go.id/submenu-multi/data-perangkat-desa-1",
@@ -430,7 +417,7 @@ const PERANGKAT_DESA = {
     { desa: "Wirun",     periode: "2022, bulan tidak tercantum", url: "https://mojolaban.sukoharjokab.go.id/storage/files/2022/06/data-perangkat-desa-wirun.pdf" },
   ],
   tanpaDokumen: ["Bekonang", "Cangkol", "Demakan", "Gadingan", "Joho", "Klumprit"],
-  /* Diverifikasi baris per baris dari PDF resmi desa yang bersangkutan */
+  /* Rincian [jabatan, nama] dari PDF desa; nama null = tidak tercantum di dokumen */
   rinci: {
     palur: { periode: "September 2022", daftar: [
       ["Kepala Desa", "Sugito, S.Pd"], ["Sekretaris Desa", "Suramto"], ["Kaur Keuangan", "Siti Fauziah"],
@@ -447,7 +434,8 @@ const PERANGKAT_DESA = {
 };
 
 /* ============================================================
-   KESEJAHTERAAN SOSIAL — rumah ibadah & tokoh agama (XLSX situs kecamatan)
+   KESEJAHTERAAN SOSIAL — rumah ibadah & tokoh agama (XLSX situs kecamatan).
+   tahun null = tahun data tidak dicantumkan di berkas.
    ============================================================ */
 const KESOS = {
   gereja: { tahun: null, berkasDiunggah: "Mei 2022", total: 9,
@@ -462,8 +450,7 @@ const KESOS = {
     perDesa: { Triyagan: 15, Sapen: 18, Joho: 15, Kragilan: 10, Klumprit: 12, Cangkol: 20, Bekonang: 12, Demakan: 25,
                Dukuh: 13, Wirun: 15, Tegalmade: 6, Laban: 16, Plumbon: 15, Gadingan: 17, Palur: 21 },
     keterangan: { Triyagan: "1 kapel", Cangkol: "2 musala", Tegalmade: "1 musala", Gadingan: "2 kapel" } },
-  /* Lembar "tokoh agama per desa" (tokoh agama Islam). Hanya 6 desa tercatat.
-     Nama & alamat rumah tidak disalin. */
+  /* Tokoh agama Islam; hanya 6 desa tercatat. Nama dan alamat tidak disalin. */
   tokoh: { tahun: null, total: 90,
     url: "https://mojolaban.sukoharjokab.go.id/storage/files/2022/05/jumlah-masjid-dan-tokoh-agama.xlsx",
     halaman: "https://mojolaban.sukoharjokab.go.id/submenu-multi/jumlah-masjid-dan-tokoh-agama",

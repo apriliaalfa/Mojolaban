@@ -1,40 +1,33 @@
 /**
- * salat.js — Perhitungan jadwal salat dengan kriteria Kemenag RI
- * Versi 1.0 · Oktober 2026
+ * salat.js — Jadwal salat dengan kriteria Kemenag RI.
  *
- * Kriteria: Subuh −20°, Isya −18°, Asar bayangan 1× (Syafi'i),
- * terbit/terbenam −0°50', ihtiyat (kehati-hatian) dalam menit, dibulatkan ke atas
- * (terbit dibulatkan ke bawah), Imsak = Subuh − 10 menit.
+ * Kriteria: Subuh −20°, Isya −18°, Asar bayangan 1× (Syafi'i), terbit/terbenam −1°,
+ * ditambah ihtiyat (menit kehati-hatian), Imsak = Subuh − 10 menit.
+ * Hasil diuji terhadap jadwal Kemenag Kab. Sukoharjo 2026 (lihat KONFIG.validasi).
+ * Jadwal resmi: https://bimasislam.kemenag.go.id/jadwalshalat
  *
- * Divalidasi terhadap jadwal Kemenag Kabupaten Sukoharjo tahun 2026 (365 hari);
- * hasil validasi dicatat di KONFIG.validasi. Jadwal resmi tetap:
- * https://bimasislam.kemenag.go.id/jadwalshalat
- *
- * Tanpa dependensi dan tanpa jaringan. Dipakai di browser (window.Salat)
- * dan dapat diuji di Node (module.exports).
+ * Tanpa dependensi dan tanpa jaringan: window.Salat di browser, module.exports di Node.
  */
 (function (root) {
   'use strict';
 
   var KONFIG = {
-    // Titik acuan yang paling cocok dengan tabel Kemenag Kab. Sukoharjo (hasil uji, lihat validasi).
-    // Kemenag menerbitkan jadwal per kabupaten, jadi jadwal ini berlaku untuk wilayah Kab. Sukoharjo
-    // termasuk Mojolaban (koordinat kantor kecamatan ±−7,606; 110,871 menghasilkan selisih paling banyak 1 menit).
+    // Titik acuan Kab. Sukoharjo yang paling cocok dengan tabel Kemenag (jadwal Kemenag berlaku per kabupaten).
     lintang: -7.68,
     bujur:   110.85,
     zona:    7,             // WIB
-    sudutSubuh: 20,
+    sudutSubuh: 20,         // derajat di bawah ufuk
     sudutIsya:  18,
-    tinggiTerbit: -1,
+    tinggiTerbit: -1,       // tinggi matahari saat terbit & Magrib (derajat)
     ihtiyat: { subuh: 2, terbit: 2, dzuhur: 3, ashar: 2, maghrib: 2, isya: 2 },
-    imsak: 10,
-    // Uji 10 Okt 2026 terhadap jadwal Kemenag Kab. Sukoharjo 2026 (365 hari, 7 waktu):
-    // 2.338/2.555 waktu (91,5%) sama persis; sisanya selisih tepat 1 menit; tidak ada selisih > 1 menit.
+    imsak: 10,              // menit sebelum Subuh
+    // Uji 10 Okt 2026, 365 hari × 7 waktu: 91,5% sama persis, sisanya selisih 1 menit.
     validasi: { tahun: 2026, tepat: 2338, total: 2555, selisihMaks: 1 }
   };
 
   var RAD = Math.PI / 180;
 
+  // Tanggal kalender → Julian Day (tengah malam UT)
   function julianDay(y, m, d) {
     if (m <= 2) { y -= 1; m += 12; }
     var a = Math.floor(y / 100), b = 2 - a + Math.floor(a / 4);
@@ -56,18 +49,20 @@
   }
 
   /**
-   * Hitung jadwal untuk satu tanggal kalender (y, m 1–12, d).
-   * Mengembalikan menit sejak tengah malam waktu lokal untuk tiap waktu.
+   * Jadwal satu tanggal (y, m 1–12, d) dalam menit sejak tengah malam WIB:
+   * { imsak, subuh, terbit, dzuhur, ashar, maghrib, isya }.
    */
   function hitung(y, m, d, k) {
     k = k || KONFIG;
     var jd = julianDay(y, m, d) - k.bujur / 360;
+    // Selisih jam dari transit (Dzuhur) saat matahari mencapai `tinggi` derajat
     function sudutJam(jam, tinggi, dekl) {
       var phi = k.lintang * RAD, de = dekl * RAD;
       var c = (Math.sin(tinggi * RAD) - Math.sin(phi) * Math.sin(de)) / (Math.cos(phi) * Math.cos(de));
       return Math.acos(Math.max(-1, Math.min(1, c))) / RAD / 15;
     }
-    // Iterasi: posisi matahari dihitung ulang pada perkiraan waktu kejadian
+    // arah: −1 sebelum Dzuhur, 0 Dzuhur, 1 sesudahnya. Tiga iterasi agar posisi matahari
+    // dihitung pada waktu kejadiannya sendiri.
     function waktu(jamAwal, tinggiFn, arah) {
       var t = jamAwal;
       for (var i = 0; i < 3; i++) {
@@ -77,6 +72,7 @@
       }
       return t;
     }
+    // Asar: panjang bayangan = panjang benda + bayangan saat Dzuhur
     var asarTinggi = function (dekl) {
       return Math.atan(1 / (1 + Math.tan(Math.abs(k.lintang - dekl) * RAD))) / RAD;
     };
@@ -89,6 +85,7 @@
       isya:    waktu(19, function () { return -k.sudutIsya; }, 1)
     };
     var out = {};
+    // Ihtiyat: terbit dimajukan dan dibulatkan ke bawah, waktu lain dimundurkan dan dibulatkan ke atas
     Object.keys(jam).forEach(function (n) {
       var menit = jam[n] * 60;
       out[n] = n === 'terbit' ? Math.floor(menit - k.ihtiyat[n]) : Math.ceil(menit + k.ihtiyat[n]);
@@ -97,6 +94,7 @@
     return out;
   }
 
+  // Menit → "HH.MM"
   function format(menit) {
     var h = Math.floor(menit / 60), mm = menit % 60;
     return (h < 10 ? '0' : '') + h + '.' + (mm < 10 ? '0' : '') + mm;

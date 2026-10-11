@@ -1,14 +1,12 @@
 # Website Informasi Kecamatan Mojolaban
 
-Website statis tentang Kecamatan Mojolaban, Kabupaten Sukoharjo: profil kecamatan, daftar desa, info publik, berita, serta alamat dan kontak kantor.
+Website tentang Kecamatan Mojolaban, Kabupaten Sukoharjo: profil kecamatan, daftar desa, info publik, berita, serta alamat dan kontak kantor.
 
 Dibuat untuk tugas mata kuliah Sistem Terdistribusi. **Ini bukan situs resmi pemerintah.** Situs resminya ada di [mojolaban.sukoharjokab.go.id](https://mojolaban.sukoharjokab.go.id/).
 
-Dibangun dengan HTML, CSS, dan JavaScript biasa, tanpa framework, backend, atau proses build.
+Dibangun dengan HTML, CSS, dan JavaScript biasa.
 
 ## Menjalankan
-
-Buka `index.html` di browser. Supaya perilakunya sama seperti di hosting, sebaiknya pakai server lokal:
 
 - VS Code: klik kanan `index.html` → **Open with Live Server** (ekstensi Live Server).
 - Python: jalankan `python -m http.server 8000` di folder proyek, lalu buka <http://localhost:8000>.
@@ -34,16 +32,14 @@ Mojolaban/
     └── img/                Logo dan foto
 ```
 
-Profil desa yang ada sekarang: Bekonang, Gadingan, Plumbon, dan Wirun. `desa-palur.html` sudah ditautkan di menu, tetapi filenya belum dibuat.
-
-Halaman di dalam `profil/`, `desa/`, dan `info/` memanggil aset dengan `../assets/...`. Halaman di folder utama memakai `assets/...`.
+Profil desa yang ada sekarang: Bekonang, Gadingan, Plumbon, Palur, dan Wirun.
 
 ## File utama
 
 - **`data.js`** menyimpan semua data: statistik kecamatan, 15 desa, berita, pegawai, perangkat desa, rumah ibadah, dan SOP. Setiap kelompok data mencantumkan sumbernya. Untuk mengubah atau menambah data, cukup edit file ini; halamannya ikut berubah.
-- **`mojo.js`** mengatur navigasi (dropdown, menu mobile), panel "Hari ini" di Beranda (jam, cuaca, jadwal salat, status jam buka), dan menyusun daftar, tabel, serta grafik dari `data.js`. Elemen yang diisi otomatis ditandai atribut `data-...`, misalnya `data-pegawai="golongan"` atau `data-news-list="2"`.
+- **`mojo.js`** mengatur navigasi (dropdown, menu mobile), panel "Hari ini" di Beranda (jam, cuaca, jadwal salat, status jam buka), dan menyusun daftar, tabel, serta grafik dari `data.js`.
 - **`salat.js`** menghitung jadwal salat dengan kriteria Kemenag RI tanpa koneksi internet. Hasilnya sudah dicocokkan dengan jadwal Kemenag Kab. Sukoharjo 2026, dengan selisih paling banyak 1 menit.
-- **`portal.css`** berisi seluruh tampilan. Warna dan ukuran diatur lewat variabel di `:root`.
+- **`portal.css`** berisi seluruh tampilan. 
 
 ## Menambah konten
 
